@@ -27,6 +27,26 @@
 #endif
 #include <zmq.h>
 
+#ifndef ZMQ_DONTWAIT
+#   define ZMQ_DONTWAIT   ZMQ_NOBLOCK
+#endif
+#ifndef ZMQ_RCVHWM
+#   define ZMQ_RCVHWM     ZMQ_HWM
+#endif
+#ifndef ZMQ_SNDHWM
+#   define ZMQ_SNDHWM     ZMQ_HWM
+#endif
+#if ZMQ_VERSION_MAJOR == 2
+#   define more_t int64_t
+#   define zmq_ctx_destroy(context) zmq_term(context)
+#   define zmq_msg_send(msg,sock,opt) zmq_send (sock, msg, opt)
+#   define zmq_msg_recv(msg,sock,opt) zmq_recv (sock, msg, opt)
+#   define ZMQ_POLL_MSEC    1000        //  zmq_poll is usec
+#elif ZMQ_VERSION_MAJOR == 3
+#   define more_t int
+#   define ZMQ_POLL_MSEC    1           //  zmq_poll is msec
+#endif
+
 #if defined _MSC_VER
 #ifndef int8_t
 typedef __int8 int8_t;
@@ -425,7 +445,7 @@ static VALUE module_select (int argc_, VALUE* argv_, VALUE self_)
     if (NIL_P (timeout))
         timeout_usec = -1;
     else
-        timeout_usec = (long)(NUM2DBL (timeout) * 1000000);
+        timeout_usec = (long)(NUM2DBL (timeout) * 1000 * ZMQ_POLL_MSEC);
 
     return module_select_internal(readset, writeset, errset, timeout_usec);
 }
@@ -1046,7 +1066,9 @@ static VALUE socket_getsockopt (VALUE self_, VALUE option_)
 	case ZMQ_BACKLOG:
 #if ZMQ_VERSION >= 20101
 	case ZMQ_RECONNECT_IVL_MAX:
+#if ZMQ_VERSION < 30000
 	case ZMQ_RECOVERY_IVL_MSEC:
+#endif
 #endif
 #if ZMQ_VERSION >= 20200
         case ZMQ_SNDTIMEO:
@@ -1072,12 +1094,19 @@ static VALUE socket_getsockopt (VALUE self_, VALUE option_)
         break;
 #endif
     case ZMQ_RCVMORE:
+#if ZMQ_VERSION >= 30000
+    case ZMQ_SNDHWM:
+    case ZMQ_RCVHWM:
+#else
     case ZMQ_HWM:
+#endif
+#if ZMQ_VERSION < 30000
     case ZMQ_SWAP:
+    case ZMQ_MCAST_LOOP:
+#endif
     case ZMQ_AFFINITY:
     case ZMQ_RATE:
     case ZMQ_RECOVERY_IVL:
-    case ZMQ_MCAST_LOOP:
     case ZMQ_SNDBUF:
     case ZMQ_RCVBUF:
         {
@@ -1400,12 +1429,19 @@ static VALUE socket_setsockopt (VALUE self_, VALUE option_,
     Check_Socket (s);
 
     switch (NUM2INT (option_)) {
+#if ZMQ_VERSION >= 30000
+    case ZMQ_SNDHWM:
+    case ZMQ_RCVHWM:
+#else
     case ZMQ_HWM:
+#endif
+#if ZMQ_VERSION < 30000
     case ZMQ_SWAP:
+    case ZMQ_MCAST_LOOP:
+#endif
     case ZMQ_AFFINITY:
     case ZMQ_RATE:
     case ZMQ_RECOVERY_IVL:
-    case ZMQ_MCAST_LOOP:
     case ZMQ_SNDBUF:
     case ZMQ_RCVBUF:
 	    {
@@ -1423,7 +1459,9 @@ static VALUE socket_setsockopt (VALUE self_, VALUE option_,
 	case ZMQ_BACKLOG:
 #if ZMQ_VERSION >= 20101
     case ZMQ_RECONNECT_IVL_MAX:
+#if ZMQ_VERSION < 30000
     case ZMQ_RECOVERY_IVL_MSEC:
+#endif
 #endif
 #if ZMQ_VERSION >= 20200
     case ZMQ_SNDTIMEO:
@@ -1555,7 +1593,7 @@ static VALUE zmq_send_blocking (void* args_)
 {
     struct zmq_send_recv_args *send_args = (struct zmq_send_recv_args *)args_;
 
-    send_args->rc = zmq_send(send_args->socket, send_args->msg, send_args->flags);
+    send_args->rc = zmq_msg_send(send_args->socket, send_args->msg, send_args->flags);
     
     return Qnil;
 }
@@ -1630,7 +1668,7 @@ static VALUE socket_send (int argc_, VALUE* argv_, VALUE self_)
     }
     else
 #endif
-        rc = zmq_send (s->socket, &msg, flags);
+        rc = zmq_msg_send (s->socket, &msg, flags);
     if (rc != 0 && zmq_errno () == EAGAIN) {
         rc = zmq_msg_close (&msg);
         assert (rc == 0);
@@ -1654,7 +1692,7 @@ static VALUE zmq_recv_blocking (void* args_)
 {
     struct zmq_send_recv_args *recv_args = (struct zmq_send_recv_args *)args_;
 
-    recv_args->rc = zmq_recv(recv_args->socket, recv_args->msg, recv_args->flags);
+    recv_args->rc = zmq_msg_recv(recv_args->socket, recv_args->msg, recv_args->flags);
     
     return Qnil;
 }
@@ -1715,7 +1753,7 @@ static VALUE socket_recv (int argc_, VALUE* argv_, VALUE self_)
     }
     else
 #endif
-        rc = zmq_recv (s->socket, &msg, flags);
+        rc = zmq_msg_recv (s->socket, &msg, flags);
     if (rc != 0 && zmq_errno () == EAGAIN) {
         rc = zmq_msg_close (&msg);
         assert (rc == 0);
@@ -1792,15 +1830,22 @@ void Init_zmq ()
     rb_define_method (socket_type, "recv", socket_recv, -1);
     rb_define_method (socket_type, "close", socket_close, 0);
 
+#if ZMQ_VERSION >= 30000
+    rb_define_const (zmq_module, "SNDHWM", INT2NUM (ZMQ_SNDHWM));
+    rb_define_const (zmq_module, "RCVHWM", INT2NUM (ZMQ_RCVHWM));
+#else
     rb_define_const (zmq_module, "HWM", INT2NUM (ZMQ_HWM));
     rb_define_const (zmq_module, "SWAP", INT2NUM (ZMQ_SWAP));
+#endif
     rb_define_const (zmq_module, "AFFINITY", INT2NUM (ZMQ_AFFINITY));
     rb_define_const (zmq_module, "IDENTITY", INT2NUM (ZMQ_IDENTITY));
     rb_define_const (zmq_module, "SUBSCRIBE", INT2NUM (ZMQ_SUBSCRIBE));
     rb_define_const (zmq_module, "UNSUBSCRIBE", INT2NUM (ZMQ_UNSUBSCRIBE));
     rb_define_const (zmq_module, "RATE", INT2NUM (ZMQ_RATE));
     rb_define_const (zmq_module, "RECOVERY_IVL", INT2NUM (ZMQ_RECOVERY_IVL));
+#if ZMQ_VERSION < 30000
     rb_define_const (zmq_module, "MCAST_LOOP", INT2NUM (ZMQ_MCAST_LOOP));
+#endif
     rb_define_const (zmq_module, "SNDBUF", INT2NUM (ZMQ_SNDBUF));
     rb_define_const (zmq_module, "RCVBUF", INT2NUM (ZMQ_RCVBUF));
     rb_define_const (zmq_module, "SNDMORE", INT2NUM (ZMQ_SNDMORE));
@@ -1815,7 +1860,9 @@ void Init_zmq ()
 #endif
 #if ZMQ_VERSION >= 20101
     rb_define_const (zmq_module, "RECONNECT_IVL_MAX", INT2NUM (ZMQ_RECONNECT_IVL_MAX));
+#if ZMQ_VERSION < 30000
     rb_define_const (zmq_module, "RECOVERY_IVL_MSEC", INT2NUM (ZMQ_RECOVERY_IVL_MSEC));
+#endif
 #endif
 #if ZMQ_VERSION >= 20200
     rb_define_const (zmq_module, "SNDTIMEO", INT2NUM (ZMQ_SNDTIMEO));
