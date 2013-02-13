@@ -103,11 +103,11 @@ VALUE exception_type;
 
 /*
  * call-seq:
- *   ZMQ.version() -> [major, minor, patch]
+ *   ZMQ.zeromq_version() -> [major, minor, patch]
  *
  * Returns the version of the zeromq library.
  */
-static VALUE module_version (VALUE self_)
+static VALUE module_zeromq_version (VALUE self_)
 {
     int major, minor, patch;
     
@@ -1593,7 +1593,7 @@ static VALUE zmq_send_blocking (void* args_)
 {
     struct zmq_send_recv_args *send_args = (struct zmq_send_recv_args *)args_;
 
-    send_args->rc = zmq_msg_send(send_args->socket, send_args->msg, send_args->flags);
+    send_args->rc = zmq_msg_send(send_args->msg, send_args->socket, send_args->flags);
     
     return Qnil;
 }
@@ -1668,7 +1668,7 @@ static VALUE socket_send (int argc_, VALUE* argv_, VALUE self_)
     }
     else
 #endif
-        rc = zmq_msg_send (s->socket, &msg, flags);
+        rc = zmq_msg_send (&msg, s->socket, flags);
     if (rc != 0 && zmq_errno () == EAGAIN) {
         rc = zmq_msg_close (&msg);
         assert (rc == 0);
@@ -1692,7 +1692,7 @@ static VALUE zmq_recv_blocking (void* args_)
 {
     struct zmq_send_recv_args *recv_args = (struct zmq_send_recv_args *)args_;
 
-    recv_args->rc = zmq_msg_recv(recv_args->socket, recv_args->msg, recv_args->flags);
+    recv_args->rc = zmq_msg_recv(recv_args->msg, recv_args->socket, recv_args->flags);
     
     return Qnil;
 }
@@ -1753,7 +1753,7 @@ static VALUE socket_recv (int argc_, VALUE* argv_, VALUE self_)
     }
     else
 #endif
-        rc = zmq_msg_recv (s->socket, &msg, flags);
+        rc = zmq_msg_recv (&msg, s->socket, flags);
     if (rc != 0 && zmq_errno () == EAGAIN) {
         rc = zmq_msg_close (&msg);
         assert (rc == 0);
@@ -1805,10 +1805,10 @@ static VALUE socket_close (VALUE self_)
     return Qnil;
 }
 
-void Init_zmq ()
+void Init_zmq_ext ()
 {
     VALUE zmq_module = rb_define_module ("ZMQ");
-    rb_define_singleton_method (zmq_module, "version", module_version, 0);
+    rb_define_singleton_method (zmq_module, "zeromq_version", module_zeromq_version, 0);
     rb_define_singleton_method (zmq_module, "select", module_select, -1);
 
     exception_type = rb_define_class_under (zmq_module, "Error", rb_eRuntimeError );
