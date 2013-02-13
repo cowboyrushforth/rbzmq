@@ -1,0 +1,15 @@
+ChangeLog
+History.rdoc
+Manifest.txt
+README.rdoc
+Rakefile
+ext/zmq/extconf.rb
+ext/zmq/zmq.c
+lib/zmq.rb
+perf/local_lat.rb
+perf/local_thr.rb
+perf/remote_lat.rb
+perf/remote_thr.rb
+spec/helpers.rb
+spec/zmq/context_spec.rb
+spec/zmq_spec.rb

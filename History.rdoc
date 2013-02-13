@@ -1,0 +1,37 @@
+== v3.0.0 [2013-02-12] Michael Granger <ged@FaerieMUD.org>
+
+- Updated for zmq 3.2
+- support socket timeouts
+- Fixed formatting of comment of socket_setsockopt function
+- Reference count the ZMQ context to prevent it from being garbage
+  collected while there are open sockets. Fixes #21
+- Don't reference string length twice.
+
+
+== v2.1.4 [2011-09-14] Brian Buchanan <brian@tiogalake.com>
+
+- Fix C compilation warnings for Ruby 1.8.7 and Ruby 1.9.2.
+- use FIX2INT if we want an int
+- should install automagically on most platforms now. fixes #10
+- Use ZMQ::Error instead of RuntimeErrors to make exception-handling
+around sockets more predictable.
+
+
+== v2.1.3 [2011-06-05] Brian Buchanan <brian@tiogalake.com>
+
+- Add support for ZMQ_RECOVERY_IVL_MSEC,
+  ZMQ_RECONNECT_IVL_MAX, ZMQ_ROUTER, ZMQ_DEALER
+- README is in RDOC format -- rename to README.rdoc (Issue #7)
+- Having a minimal amount of code to play with quickly ensures a quick
+  win
+
+
+== v2.1.0.1 [2010-12-15] Brian Buchanan <bwb@holo.org>
+
+- Gem version 2.1.0.1 -- fix broken getsockopt options
+
+
+== v2.0.7 [2010-06-28] Brian Buchanan <bwb@holo.org>
+
+- rename gem from zmq2 to zmq
+
