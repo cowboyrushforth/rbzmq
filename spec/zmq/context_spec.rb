@@ -13,11 +13,6 @@ require 'socket'
 
 describe ZMQ::Context do
 
-	# 0mq socket specifications for Handlers
-	TEST_SEND_SPEC = 'inproc://zmq-context-spec-socket'
-	TEST_RECV_SPEC = 'inproc://zmq-context-spec-socket'
-
-
 	it "can be created without specifying a thread pool size" do
 		ctx = described_class.new
 		ctx.should be_a( described_class )
@@ -50,7 +45,7 @@ describe ZMQ::Context do
 			@ctx.close
 		end
 
-		it "can be used to create PUSH sockets" do
+		it "can be used to create sockets" do
 			@ctx.socket( ZMQ::PUSH ).should be_a( ZMQ::Socket )
 		end
 		

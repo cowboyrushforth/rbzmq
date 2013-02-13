@@ -13,10 +13,6 @@ require 'socket'
 
 describe ZMQ do
 
-	# 0mq socket specifications for Handlers
-	TEST_SEND_SPEC = 'inproc://zmq-spec-socket'
-	TEST_RECV_SPEC = 'inproc://zmq-spec-socket'
-
 	it "knows what version of the zeromq library it's using" do
 		described_class.zeromq_version.should be_an( Array )
 		described_class.zeromq_version.should have( 3 ).members

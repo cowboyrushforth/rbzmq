@@ -1146,6 +1146,25 @@ static VALUE socket_getsockopt (VALUE self_, VALUE option_)
             retval = rb_str_new (identity, optvalsize);
         }
         break;
+
+	case ZMQ_LAST_ENDPOINT:
+		{
+            char endpoint[4096];
+            size_t optvalsize = sizeof (endpoint);
+
+            rc = zmq_getsockopt (s->socket, NUM2INT (option_),
+                                 (void *)endpoint, &optvalsize);
+
+            if (rc != 0) {
+              rb_raise (exception_type, "%s", zmq_strerror (zmq_errno ()));
+              return Qnil;
+            }
+
+            if (optvalsize > sizeof (endpoint))
+                optvalsize = sizeof (endpoint);
+
+            retval = rb_str_new (endpoint, optvalsize);
+		}
     default:
         rb_raise (exception_type, "%s", zmq_strerror (EINVAL));
         return Qnil;
@@ -1906,6 +1925,15 @@ void Init_zmq_ext ()
     //  Deprecated
     rb_define_const (zmq_module, "UPSTREAM", INT2NUM (ZMQ_UPSTREAM));
     rb_define_const (zmq_module, "DOWNSTREAM", INT2NUM (ZMQ_DOWNSTREAM));
+#endif
+
+#ifdef ZMQ_POLLIN
+	rb_define_const (zmq_module, "POLLIN", INT2NUM (ZMQ_POLLIN));
+	rb_define_const (zmq_module, "POLLOUT", INT2NUM (ZMQ_POLLOUT));
+#endif
+
+#ifdef ZMQ_LAST_ENDPOINT
+	rb_define_const (zmq_module, "LAST_ENDPOINT", INT2NUM (ZMQ_LAST_ENDPOINT));
 #endif
 
 }

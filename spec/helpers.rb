@@ -7,6 +7,17 @@ require 'zmq'
 
 module ZMQ::SpecHelpers
 
+
+	# A collection of constants to use in testing.
+	module TestConstants
+
+		# 0mq socket specifications for Handlers
+		TEST_SEND_SPEC = 'inproc://zmq-spec-socket'
+		TEST_RECV_SPEC = 'inproc://zmq-spec-socket'
+		
+	end # module TestConstants
+
+
     ### A type matcher for collections.
 	class AllBeMatcher
 
@@ -32,7 +43,7 @@ module ZMQ::SpecHelpers
 			]
 		end
 
-	end
+	end # class AllBeMatcher
 
 
 	###############
@@ -44,11 +55,13 @@ module ZMQ::SpecHelpers
 		AllBeMatcher.new( expected_class )
 	end
 
-end
+end # module ZMQ::SpecHelpers
 
 
 ### Mock with RSpec
 RSpec.configure do |c|
+	include ZMQ::SpecHelpers::TestConstants
+
 	c.mock_with( :rspec )
 
 	c.include( ZMQ::SpecHelpers )
