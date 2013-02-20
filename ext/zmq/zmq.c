@@ -1147,6 +1147,7 @@ static VALUE socket_getsockopt (VALUE self_, VALUE option_)
         }
         break;
 
+#ifdef ZMQ_LAST_ENDPOINT
 	case ZMQ_LAST_ENDPOINT:
 		{
             char endpoint[4096];
@@ -1165,6 +1166,8 @@ static VALUE socket_getsockopt (VALUE self_, VALUE option_)
 
             retval = rb_str_new (endpoint, optvalsize);
 		}
+#endif
+
     default:
         rb_raise (exception_type, "%s", zmq_strerror (EINVAL));
         return Qnil;
@@ -1536,7 +1539,7 @@ static VALUE socket_setsockopt (VALUE self_, VALUE option_,
  * [_tcp_] unicast transport using TCP
  * [_pgm_, _epgm_] reliable multicast transport using PGM
  *
- * With the exception of ZMQ:PAIR sockets, a single socket may be connected to
+ * With the exception of ZMQ::PAIR sockets, a single socket may be connected to
  * multiple endpoints using connect(), while simultaneously accepting
  * incoming connections from multiple endpoints bound to the socket using
  * bind(). Refer to ZMQ::Socket for a description of the exact semantics
@@ -1688,16 +1691,19 @@ static VALUE socket_send (int argc_, VALUE* argv_, VALUE self_)
     else
 #endif
         rc = zmq_msg_send (&msg, s->socket, flags);
-    if (rc != 0 && zmq_errno () == EAGAIN) {
-        rc = zmq_msg_close (&msg);
-        assert (rc == 0);
-        return Qfalse;
-    }
 
-    if (rc != 0) {
-        rb_raise (exception_type, "%s", zmq_strerror (zmq_errno ()));
+    if (rc == -1) {
+        int err = zmq_errno();
+        const char *errmsg = zmq_strerror( err );
+
         rc = zmq_msg_close (&msg);
         assert (rc == 0);
+
+        if ( err >= ZMQ_HAUSNUMERO )
+            rb_raise (exception_type, "%s", errmsg );
+        else
+            rb_sys_fail( "#send" );
+
         return Qnil;
     }
 
@@ -1773,16 +1779,19 @@ static VALUE socket_recv (int argc_, VALUE* argv_, VALUE self_)
     else
 #endif
         rc = zmq_msg_recv (&msg, s->socket, flags);
-    if (rc != 0 && zmq_errno () == EAGAIN) {
-        rc = zmq_msg_close (&msg);
-        assert (rc == 0);
-        return Qnil;
-    }
 
-    if (rc != 0) {
-        rb_raise (exception_type, "%s", zmq_strerror (zmq_errno ()));
+    if (rc == -1) {
+        int err = zmq_errno();
+        const char *errmsg = zmq_strerror( err );
+
         rc = zmq_msg_close (&msg);
         assert (rc == 0);
+
+        if ( err >= ZMQ_HAUSNUMERO )
+            rb_raise (exception_type, "%s", errmsg );
+        else
+            rb_sys_fail( "#recv" );
+
         return Qnil;
     }
 

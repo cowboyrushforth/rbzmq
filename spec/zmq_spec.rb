@@ -42,12 +42,12 @@ describe ZMQ do
 		rval = ZMQ.select( nil, [sock2], nil, 0.2 )
 		rval.should == [ [], [sock2], [] ]
 
-		sock2.send( "Hi!" )
+		sock2.send( "Hi!" ).should be_true()
 		
 		rval = ZMQ.select( [sock1,sock2], nil, nil, 0.2 )
 		rval.should == [ [sock1], [], [] ]
 
-		sock1.recv
+		sock1.recv.should == 'Hi!'
 
 		sock1.close
 		sock2.close
