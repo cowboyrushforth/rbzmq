@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name = 'zmq'
-  s.version = '2.1.4'
+  s.version = '3.2.0'
   s.date = '2011-09-14'
   s.authors = ['Martin Sustrik', 'Brian Buchanan']
   s.email = ['sustrik@250bpm.com', 'bwb@holo.org']

@@ -17,23 +17,26 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 require 'mkmf'
-dir_config('zmq_ext')
+dir_config('zmq')
+
+$CFLAGS += ' -std=c99'
+CONFIG['warnflags'].gsub!(/-Wdeclaration-after-statement|-Wunused-parameter/, '') if CONFIG['warnflags']
 
 def header?
-	have_header('zmq.h') ||
-		find_header('zmq.h', '/opt/local/include', '/usr/local/include', '/usr/include')
+  have_header('zmq.h') ||
+    find_header('zmq.h', '/opt/local/include', '/usr/local/include', '/usr/include')
 end
 
 def library?
-	have_library('zmq', 'zmq_init') ||
-		find_library('zmq', 'zmq_init', '/opt/local/lib', '/usr/local/lib', '/usr/lib')
+  have_library('zmq', 'zmq_init') ||
+    find_library('zmq', 'zmq_init', '/opt/local/lib', '/usr/local/lib', '/usr/lib')
 end
 
 if header? && library?
-	puts "Cool, I found your zmq install..."
-	create_makefile("zmq_ext")
+  puts "Cool, I found your zmq install..."
+  create_makefile("zmq")
 else
-	raise "Couldn't find zmq library. try setting --with-zmq-dir=<path> to tell me where it is."
+  raise "Couldn't find zmq library. try setting --with-zmq-dir=<path> to tell me where it is."
 end
 
 
