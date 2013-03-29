@@ -1,8 +1,7 @@
 = ZeroMQ Ruby Bindings
 
-home :: https://bitbucket.org/ged/rbzmq
-github :: https://github.com/ged/rbzmq
-docs :: http://deveiate.org/code/rbzmq
+github :: https://github.com/zeromq/rbzmq
+this branch:: https://github.com/cowboyrushforth/rbzmq
 ZeroMQ :: http://www.zeromq.org/
 
 ØMQ looks like an embeddable networking library but acts like a concurrency framework. It gives you
